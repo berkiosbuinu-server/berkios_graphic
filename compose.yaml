@@ -1,0 +1,16 @@
+services:
+  berkios-api:
+    build: .
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8787
+      BERKIOS_DB: /data/berkios-users.sqlite
+      BERKIOS_CORS_ORIGINS: ${BERKIOS_CORS_ORIGINS:?Set the allowed Studio origin}
+      BERKIOS_SUPER_ADMIN_TOKEN: ${BERKIOS_SUPER_ADMIN_TOKEN:?Set a long random super-admin secret}
+    volumes:
+      - berkios_accounts:/data
+    expose:
+      - "8787"
+volumes:
+  berkios_accounts:

@@ -1,0 +1,10 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
+import { signLease, verifyLease } from "./license-signing.js";
+const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+const sample = (overrides={}) => ({ issuer:"BERKIOS", version:1, subject:"42", plan:"pro", machineId:"machine-test-123", issuedAt:1_800_000_000_000, expiresAt:1_800_000_060_000, capabilities:{mobileBuild:true}, ...overrides });
+test("une licence signée est valide pour la machine prévue",()=>{const lease=signLease(sample(),privateKey);assert.equal(verifyLease(lease,publicKey,{machineId:"machine-test-123",now:1_800_000_010_000}).ok,true);});
+test("refuse une autre machine",()=>{const lease=signLease(sample(),privateKey);assert.equal(verifyLease(lease,publicKey,{machineId:"autre-machine",now:1_800_000_010_000}).reason,"machine_mismatch");});
+test("refuse une licence expirée",()=>{const lease=signLease(sample(),privateKey);assert.equal(verifyLease(lease,publicKey,{machineId:"machine-test-123",now:1_800_000_070_000}).reason,"lease_expired");});
+test("refuse une signature altérée",()=>{const lease=signLease(sample(),privateKey);lease.signature=lease.signature.slice(0,-2)+"aa";assert.equal(verifyLease(lease,publicKey,{machineId:"machine-test-123",now:1_800_000_010_000}).reason,"signature_invalid");});
